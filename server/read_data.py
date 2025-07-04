@@ -11,14 +11,21 @@ DATA_LIMIT = 3 #Change here acording the number of values the arduino returns
 data = [None,None,None] #0 = temp, 1 = press, 2 = alt 
 
 def get_data():
-	print("getting data...")
+	print("Getting data...")
 	serial_counter = 0
 	while True:
 		read_ser = ser.readline()
-		if serial_counter >= DATA_LIMIT:
+		msg = read_ser.decode()
+		if msg == "END\r\n":
+			print("End of packet")
 			serial_counter = 0
-			print("end of getting data")
+			print(data)
 			return data
-		if serial_counter < DATA_LIMIT:
-			data[serial_counter] = float(read_ser)
-			serial_counter+=1
+		else:
+			try:
+				#if valid value from sensor received
+				data[serial_counter] = float(read_ser)
+				serial_counter+=1
+			except:
+				#Invalid value from sensor received None
+				pass
