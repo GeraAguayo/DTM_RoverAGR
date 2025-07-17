@@ -1,10 +1,11 @@
 import read_data #Returns an array that contains [Temperature, Pressure, Altitude]
 import socket
+import config
 
 #set up
-ip_add = "192.168.137.117"
-local_port = 20001
-buffer_size = 1024
+ip_add = config.IP_ADDR
+local_port = config.LOCAL_PORT
+buffer_size = config.BUFFER_SIZE
 
 #Create datagram socket
 server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
