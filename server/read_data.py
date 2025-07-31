@@ -11,36 +11,34 @@ DATA_LIMIT = 3 #Change here acording the number of values the arduino returns
 
 def get_data():
 	print("get_data() called")
-	data = [None] * DATA_LIMIT #0 = temp, 1 = press, 2 = alt
+	ser.reset_input_buffer()
+	sensor_data = [None] * DATA_LIMIT #0 = temp, 1 = press, 2 = alt
 	log_id = None
 
 	while True:
+		msg = ""
 		read_ser = ser.readline()
 		try:
 			msg = read_ser.decode()
 		except:
-			pass
-		if msg == "END\r\n":
-			if log_id is not None:
-				print("Returning log")
-				print("----------")
-				return log_id
-			else:
-				print("Returning sensor data")
-				print("----------")
-				return data
-		elif msg == "DATA\r\n":
-			print("Data from sensor")
+			print("Could not handle serial input: ", read_ser)
+
+		if msg == "DATA\r\n":
 			for i in range(DATA_LIMIT):
-				read_ser = ser.readline()
+				val = 0.0
 				try:
-					#if valid value from sensor received
-					data[i] = float(read_ser)
+					val = float(ser.readline().decode())
 				except:
-					#Invalid value from sensor
-					data[i] = 0.0
+					continue
+				sensor_data[i] = val
+			print("Returning value: ",sensor_data)
+			return sensor_data
 		elif msg == "SYSLOG\r\n":
-			print("System log")
-			read_ser = ser.readline()
-			log_id = int(read_ser)
+			try:
+				log_id = ser.readline().decode()
+				log_id = int(log_id)
+			except:
+				continue
+			print("Returning value: ",log_id)
+			return log_id
 
