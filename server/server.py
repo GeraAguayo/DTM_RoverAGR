@@ -3,9 +3,9 @@ import socket
 import config
 
 #set up
-ip_add = config.IP_ADDR
-local_port = config.LOCAL_PORT
-buffer_size = config.BUFFER_SIZE
+ip_add = config.get_ip_address()
+local_port = config.get_local_port()
+buffer_size = config.get_buffer_size()
 
 #Create datagram socket
 server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
