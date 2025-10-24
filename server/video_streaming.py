@@ -5,16 +5,26 @@ import pickle
 
 max_length = 65000
 host = "192.168.1.100" #Base station PC ip
+#host = "192.168.1.169" #test
 port = 5000
 
 net_socket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
 
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(0)
 ret, frame = cap.read()
 
+#define resolution for resizing
+NEW_WIDTH = 320
+NEW_HEIGHT = 240
+JPEG_QUALITY = 70
+ 
 while ret:
     #compress frame
-    retval, buffer = cv2.imencode(".jpg", frame)
+    small_frame = cv2.resize(frame, (NEW_WIDTH, NEW_HEIGHT), interpolation=cv2.INTER_AREA)
+    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), JPEG_QUALITY]
+
+    #retval, buffer = cv2.imencode(".jpg", frame)
+    retval, buffer = cv2.imencode(".jpg", small_frame, encode_param)
 
     if retval:
         #Covert to byte array
@@ -51,3 +61,4 @@ while ret:
     ret, frame = cap.read()
 
 print("done")
+

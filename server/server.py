@@ -6,6 +6,7 @@ import config
 ip_add = config.get_ip_address()
 local_port = config.get_local_port()
 buffer_size = config.get_buffer_size()
+TELEMETRY_VALUES = 7
 
 #Create datagram socket
 server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
@@ -27,12 +28,13 @@ while True:
 			print("Sensor data received - Server")
 			server_socket.sendto(str.encode("START_TM"),client_ip)
 			#send number of values
+			print(f"Number of values to send {len(data)}")
 			server_socket.sendto(str.encode(str(len(data))),client_ip)
 			#Send telemetry values
 			for d in data:
 				val = str.encode(str(d))
 				server_socket.sendto(val,client_ip)
-			data = [0.0,0.0,0.0]
+			data = [0.0] * TELEMETRY_VALUES
 		#If system log received
 		elif (type(data) is int):
 			print("Syslog received - Server")

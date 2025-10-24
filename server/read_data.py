@@ -7,7 +7,7 @@ import os
 BAUDRATE = 9600
 ser = serial.Serial("/dev/ttyACM0",9600)
 ser.baudrate = BAUDRATE
-DATA_LIMIT = 3 #Change here acording the number of values the arduino returns
+DATA_LIMIT = 7 #Change here acording the number of values the arduino returns
 
 def get_data():
 	print("get_data() called")
