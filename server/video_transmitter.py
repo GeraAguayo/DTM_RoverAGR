@@ -1,11 +1,14 @@
+'''
+Code for the video transmission from the rover to the base station
+'''
+import struct
 import cv2
 import socket
 import math
-import pickle
+import config
 
 max_length = 65000
-host = "192.168.1.100" #Base station PC ip
-#host = "192.168.1.169" #test
+host = config.get_base_station_add()
 port = 5000
 
 net_socket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
@@ -13,18 +16,9 @@ net_socket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
 cap = cv2.VideoCapture(0)
 ret, frame = cap.read()
 
-#define resolution for resizing
-NEW_WIDTH = 320
-NEW_HEIGHT = 240
-JPEG_QUALITY = 70
- 
 while ret:
     #compress frame
-    small_frame = cv2.resize(frame, (NEW_WIDTH, NEW_HEIGHT), interpolation=cv2.INTER_AREA)
-    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), JPEG_QUALITY]
-
-    #retval, buffer = cv2.imencode(".jpg", frame)
-    retval, buffer = cv2.imencode(".jpg", small_frame, encode_param)
+    retval, buffer = cv2.imencode(".jpg", frame)
 
     if retval:
         #Covert to byte array
@@ -43,7 +37,7 @@ while ret:
 
         #send the number of packets to be expected
         print("Number of packets: ", num_packs)
-        net_socket.sendto(pickle.dumps(frame_info), (host, port))
+        net_socket.sendto(struct.pack("i", num_packs), (host, port))
 
         left = 0
         right = max_length

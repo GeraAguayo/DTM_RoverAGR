@@ -1,4 +1,4 @@
-import read_data #Returns an array that contains [Temperature, Pressure, Altitude]
+import read_data #Returns an array that contains sensor data
 import socket
 import config
 
