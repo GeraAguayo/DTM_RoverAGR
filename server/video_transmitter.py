@@ -1,19 +1,28 @@
-'''
-Code for the video transmission from the rover to the base station
-'''
+# Code for the video transmission from the rover to the base station
+# Gerardo Aguayo - Rover AGR
+
 import struct
 import cv2
 import socket
 import math
 import config
+from datetime import datetime
 
 max_length = 65000
 host = config.get_base_station_add()
 port = 5000
-
 net_socket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
 
-cap = cv2.VideoCapture(0)
+
+def connectCamera(index=0):
+	while True:
+		cap = cv2.VideoCapture(0)
+		if cap.isOpened():
+			return cap
+		date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+		print(f"{date} Error - Camera not found")
+
+cap = connectCamera(0)
 ret, frame = cap.read()
 
 while ret:
@@ -36,7 +45,7 @@ while ret:
         }
 
         #send the number of packets to be expected
-        print("Number of packets: ", num_packs)
+        #print("Number of packets: ", num_packs)
         net_socket.sendto(struct.pack("i", num_packs), (host, port))
 
         left = 0
@@ -50,9 +59,9 @@ while ret:
 
             #send the frames accordingly
             net_socket.sendto(data, (host,port))
-            print("Sending video...")
+            #print("Sending video...")
 
     ret, frame = cap.read()
 
-print("done")
+#print("done")
 
