@@ -7,61 +7,54 @@ import socket
 import math
 import config
 from datetime import datetime
-
+import time
 max_length = 65000
 host = config.get_base_station_add()
 port = 5000
 net_socket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
 
 
-def connectCamera(index=0):
+def connectCamera():
 	while True:
-		cap = cv2.VideoCapture(0)
-		if cap.isOpened():
-			return cap
+		for index in range(4):
+			cap = cv2.VideoCapture(index)
+			if cap.isOpened():
+				#set low resolution
+				cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
+				cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
+				return cap
+			cap.release()
+		#camera not found
 		date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 		print(f"{date} Error - Camera not found")
 
-cap = connectCamera(0)
-ret, frame = cap.read()
+cap = connectCamera()
+encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 50]
 
-while ret:
-    #compress frame
-    retval, buffer = cv2.imencode(".jpg", frame)
+while True:
+	start_time = time.time()
 
-    if retval:
-        #Covert to byte array
-        buffer = buffer.tobytes()
-        #get size of frame
-        buffer_size = len(buffer)
+	ret, frame = cap.read()
+	if not ret:
+		cap = connectCamera(0)
+		continue
 
-        num_packs = 1
+	retval, buffer = cv2.imencode(".jpg", frame, encode_param)
 
-        if buffer_size > max_length:
-            num_packs = math.ceil(buffer_size/max_length)
 
-        frame_info = {
-            "packs" : num_packs
-        }
+	if retval:
+		buffer = buffer.tobytes()
+		buffer_size = len(buffer)
+		num_packs = math.ceil(buffer_size / max_length)
 
-        #send the number of packets to be expected
-        #print("Number of packets: ", num_packs)
-        net_socket.sendto(struct.pack("i", num_packs), (host, port))
+		net_socket.sendto(struct.pack("i",num_packs), (host, port))
 
-        left = 0
-        right = max_length
-
-        for i in range(num_packs):
-            #Truncate data to send
-            data = buffer[left:right]
-            left = right
-            right += max_length
-
-            #send the frames accordingly
-            net_socket.sendto(data, (host,port))
-            #print("Sending video...")
-
-    ret, frame = cap.read()
-
-#print("done")
-
+		for i in range(num_packs):
+			left = i * max_length
+			right = left + max_length
+			data = buffer[left:right]
+			net_socket.sendto(data, (host,port))
+	#LIMIT FPS
+	time_to_sleep = (1./30.) - (time.time() - start_time)
+	if time_to_sleep > 0:
+		time.sleep(time_to_sleep)

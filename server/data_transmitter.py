@@ -11,7 +11,6 @@ TELEMETRY_VALUES = 7
 #Create datagram socket
 server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 server_socket.bind((ip_add, local_port))
-print("The server is up and working!")
 
 #Send telemetry to client
 while True:
@@ -19,7 +18,7 @@ while True:
 	client_ip = None
 	client_pair = server_socket.recvfrom(buffer_size)
 	client_ip = client_pair[1]
-	print("Now working with client: ",client_ip)
+
 	if client_pair[0]:
 		#Get data from DCM
 		data = read_data.get_data()
@@ -28,7 +27,6 @@ while True:
 			print("Sensor data received - Server")
 			server_socket.sendto(str.encode("START_TM"),client_ip)
 			#send number of values
-			print(f"Number of values to send {len(data)}")
 			server_socket.sendto(str.encode(str(len(data))),client_ip)
 			#Send telemetry values
 			for d in data:
@@ -45,6 +43,3 @@ while True:
 			continue
 		#End the message
 		server_socket.sendto(str.encode("END"),client_ip)
-		print("End of transmission")
-		print("-------------------------------------------")
-

@@ -1,12 +1,30 @@
 import serial
+import serial.tools.list_ports
 import RPi.GPIO as GPIO
 import time
 import os
 from datetime import datetime
 
+def get_date():
+        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        return date
+
+
+def find_serial():
+        ports = serial.tools.list_ports.comports()
+        for port in ports:
+                if "Arduino" in port.description or "ACM" in port.description or "USB" in port.description:
+                        return port.device
+
+        return None
+
+
 #Set up
 BAUDRATE = 9600
-ser = serial.Serial("/dev/ttyACM0",9600)
+serial_path = find_serial()
+if serial_path == None:
+	print(f"{get_date()} ERROR - Arduino not found")
+ser = serial.Serial(serial_path,9600)
 ser.baudrate = BAUDRATE
 DATA_LIMIT = 7 #Change here acording the number of values the arduino returns
 
@@ -41,7 +59,3 @@ def get_data():
 				continue
 			return log_id
 
-
-def get_date():
-	date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-	return date
