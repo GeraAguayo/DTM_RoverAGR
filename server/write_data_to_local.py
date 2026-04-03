@@ -1,9 +1,9 @@
 # This script reads the data from the DCM and saves it to an csv file locally
-
 from datetime import datetime
 import read_data #returns an array containing sensor data
 import math
 from collections import deque
+import csv
 
 
 class DistanceCalculator:
@@ -16,6 +16,9 @@ class DistanceCalculator:
 		self.total_distance_traveled = 0.0
 
 	def add_coordinates(self, lat, lon):
+		if lat == 0.0 or lon == 0.0:
+			return #skip first invalid coords
+
 		r_lat = round(lat,5)
 		r_lon = round(lon,5)
 		self.lat_history.append(r_lat)
@@ -51,19 +54,24 @@ class DistanceCalculator:
 		c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
 		delta = R*c
 
+		self.last_avg_lat = current_avg_lat
+		self.last_avg_lon = current_avg_lon
 		if delta >= 5.0:
 			self.total_distance_traveled += delta
 			self.last_avg_lat = current_avg_lat
 			self.last_avg_lon = current_avg_lon
-
+			return delta
 		return 0.0
 
 #main script
-date_file = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+date_file = datetime.now().strftime("%Y-%m-%d-%H-%M")
 FILENAME = "local_telemetry_" + date_file + "_roverAGR.csv"
+FILEPATH = "/home/gerardo/local_telemetry/"
 HEADERS = ["Date", "Time", "Temperature", "Altitude", "Pressure", "Humidity", "Gas", "Latitude", "Longitude","Distance Traveled"]
 TELEMETRY_VALUES = 7
 dist_calc = DistanceCalculator(size=15)
+new_file = True
+
 while True:
 	sensor_data = read_data.get_data()
 
@@ -79,3 +87,14 @@ while True:
 
 		row = [date_str, time_str, temp, alt, pres, hum, gas, lat, lon, current_total_dist]
 		print(row)
+		if lat != 0.0 and lon != 0.0:
+			if new_file:
+				with open(FILEPATH+FILENAME, 'w', newline='', encoding='utf-8') as file:
+					writer = csv.writer(file)
+					writer.writerow(HEADERS)
+					new_file = False
+
+			with open(FILEPATH+FILENAME, 'a', newline='',encoding='utf-8') as file:
+				writer = csv.writer(file)
+				writer.writerow(row)
+
