@@ -6,7 +6,7 @@ import cv2
 import socket
 import math
 import config
-from datetime import datetime
+import datetime_manager
 import time
 max_length = 65000
 host = config.get_base_station_add()
@@ -25,8 +25,7 @@ def connectCamera():
 				return cap
 			cap.release()
 		#camera not found
-		date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-		print(f"{date} Error - Camera not found")
+		print(f"{datetime_manager.get_datetime()} Error - Camera not found")
 
 cap = connectCamera()
 encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 50]

@@ -3,12 +3,8 @@ import serial.tools.list_ports
 import RPi.GPIO as GPIO
 import time
 import os
+import datetime_manager
 from datetime import datetime
-
-def get_date():
-        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        return date
-
 
 def find_serial():
         ports = serial.tools.list_ports.comports()
@@ -23,7 +19,7 @@ def find_serial():
 BAUDRATE = 9600
 serial_path = find_serial()
 if serial_path == None:
-	print(f"{get_date()} ERROR - Arduino not found")
+	print(f"{datetime_manager.get_datetime()} ERROR - Arduino not found")
 ser = serial.Serial(serial_path,9600)
 ser.baudrate = BAUDRATE
 DATA_LIMIT = 7 #Change here acording the number of values the arduino returns
@@ -39,8 +35,7 @@ def get_data():
 		try:
 			msg = read_ser.decode()
 		except:
-			date = get_date()
-			print(f"{date} ERROR - Could not handle serial input {read_ser}")
+			print(f"{datetime_manager.get_datetime()} ERROR - Could not handle serial input {read_ser}")
 
 		if msg == "DATA\r\n":
 			for i in range(DATA_LIMIT):

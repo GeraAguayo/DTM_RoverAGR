@@ -1,5 +1,5 @@
 # This script reads the data from the DCM and saves it to an csv file locally
-from datetime import datetime
+import datetime_manager
 import read_data #returns an array containing sensor data
 import math
 from collections import deque
@@ -64,7 +64,7 @@ class DistanceCalculator:
 		return 0.0
 
 #main script
-date_file = datetime.now().strftime("%Y-%m-%d-%H-%M")
+date_file = datetime_manager.get_datetime()
 FILENAME = "local_telemetry_" + date_file + "_roverAGR.csv"
 FILEPATH = "/home/gerardo/local_telemetry/"
 HEADERS = ["Date", "Time", "Temperature", "Altitude", "Pressure", "Humidity", "Gas", "Latitude", "Longitude","Distance Traveled"]
@@ -76,8 +76,8 @@ while True:
 	sensor_data = read_data.get_data()
 
 	if isinstance(sensor_data, list) and len(sensor_data) == TELEMETRY_VALUES:
-		date_str = datetime.now().strftime("%Y-%m-%d")
-		time_str = datetime.now().strftime("%H:%M:%S")
+		date_str = datetime_manager.get_date()
+		time_str = datetime_manager.get_time()
 
 		temp, pres, alt, hum, gas, lat, lon = sensor_data
 

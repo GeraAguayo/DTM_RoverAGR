@@ -1,4 +1,5 @@
 import read_data #Returns an array that contains sensor data
+import datetime_manager
 import socket
 import config
 
@@ -8,9 +9,9 @@ try:
 	local_port = config.get_local_port()
 	buffer_size = config.get_buffer_size()
 	TELEMETRY_VALUES = 7
-	print(f"{read_data.get_date()} - Server started. Binding to {ip_add}")
+	print(f"{datetime_manager.get_datetime()} - Server started. Binding to {ip_add}")
 except Exception as e:
-	print(f"{read_data.get_date()} - Could not load settings {e}")
+	print(f"{datetime_manager.get_datetime()} - Could not load settings {e}")
 
 #Create datagram socket
 bound = False
@@ -20,7 +21,7 @@ while not bound:
 		server_socket.bind((ip_add, local_port))
 		bound = True
 	except Exception as e:
-		print(f"{read_data.get_date()} - Socket error: {e}")
+		print(f"{datetime_manager.get_datetime()} - Socket error: {e}")
 
 #Send telemetry to client
 while True:
@@ -47,12 +48,12 @@ while True:
 				server_socket.sendto(str.encode("SYSLOG"),client_ip)
 				server_socket.sendto(str.encode(str(data)),client_ip)
 			else:
-				print(f"{read_data.get_date()} - Unexpected message")
+				print(f"{datetime_manager.get_datetime()} - Unexpected message")
 				continue
 
 			#End the message
 			server_socket.sendto(str.encode("END"),client_ip)
 	except socket.error as se:
-		print(f"{read_data.get_date()} - Network error: {se}")
+		print(f"{datetime_manager.get_datetime()} - Network error: {se}")
 	except Exception as e:
-		print(f"{read_data.get_date()} - Internal error: {e}")
+		print(f"{datetime_manager.get_datetime()} - Internal error: {e}")
