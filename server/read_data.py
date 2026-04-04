@@ -4,30 +4,36 @@ import RPi.GPIO as GPIO
 import time
 import os
 import datetime_manager
-from datetime import datetime
+ser = None
 
 def find_serial():
         ports = serial.tools.list_ports.comports()
         for port in ports:
-                if "Arduino" in port.description or "ACM" in port.description or "USB" in port.description:
+                if "Arduino" in port.description or "ACM" in port.description or "USB" in port.description or "CH340" in port.description:
                         return port.device
-
         return None
 
-
-#Set up
-BAUDRATE = 9600
-serial_path = find_serial()
-if serial_path == None:
-	print(f"{datetime_manager.get_datetime()} ERROR - Arduino not found")
-ser = serial.Serial(serial_path,9600)
-ser.baudrate = BAUDRATE
-DATA_LIMIT = 7 #Change here acording the number of values the arduino returns
-
 def get_data():
-	ser.reset_input_buffer()
-	sensor_data = [None] * DATA_LIMIT #0 = temp, 1 = press, 2 = alt
+	global ser
+	DATA_LIMIT = 7
+
+	if ser is None:
+		path = find_serial()
+		if path is None:
+			return None
+		try:
+			ser = serial.Serial(path, 9600, timeout=1)
+		except:
+			return None
+
+	sensor_data = [None] * DATA_LIMIT
 	log_id = None
+	try:
+		ser.reset_input_buffer()
+	except:
+		print(f"{datetime_manager.get_datetime()} - Arduino not found")
+		log_id = 3
+		return log_id
 
 	while True:
 		msg = ""
@@ -35,7 +41,9 @@ def get_data():
 		try:
 			msg = read_ser.decode()
 		except:
-			print(f"{datetime_manager.get_datetime()} ERROR - Could not handle serial input {read_ser}")
+			print(f"{datetime_manager.get_datetime()} ERROR - Arduino not found")
+			log_id = 3
+			return log_id
 
 		if msg == "DATA\r\n":
 			for i in range(DATA_LIMIT):
@@ -53,4 +61,3 @@ def get_data():
 			except:
 				continue
 			return log_id
-

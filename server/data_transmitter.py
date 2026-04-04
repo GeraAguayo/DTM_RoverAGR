@@ -65,13 +65,17 @@ if __name__ == '__main__':
 	while True:
 		check_local_logs()
 		sensor_data = read_data.get_data()
+
 		if isinstance(sensor_data, list):
 			#sensor values
 			send_data_array(sensor_data)
 		elif isinstance(sensor_data, int):
 			#syslog
 			raise_system_log(sensor_data)
+		elif sensor_data is None:
+			#arduino-dcm disconnected
+			raise_system_log("3")
 		else:
-			print(f"{datetime_manager.get_date()} - Unexpected data received from DCM")
+			print(f"{datetime_manager.get_datetime()} - Unexpected data received from DCM: {sensor_data}")
 		sensor_data = None
 		time.sleep(0.05)
