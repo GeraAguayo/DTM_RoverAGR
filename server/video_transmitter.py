@@ -41,7 +41,7 @@ while True:
 
 	ret, frame = cap.read()
 	if not ret:
-		cap = connectCamera(0)
+		cap = connectCamera()
 		continue
 
 	retval, buffer = cv2.imencode(".jpg", frame, encode_param)

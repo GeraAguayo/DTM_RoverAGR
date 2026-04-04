@@ -3,57 +3,51 @@ import datetime_manager
 import socket
 import config
 
-#set up
-try:
-	ip_add = config.get_ip_address()
-	local_port = config.get_local_port()
-	buffer_size = config.get_buffer_size()
-	TELEMETRY_VALUES = 7
-	print(f"{datetime_manager.get_datetime()} - Server started. Binding to {ip_add}")
-except Exception as e:
-	print(f"{datetime_manager.get_datetime()} - Could not load settings {e}")
-
-#Create datagram socket
-bound = False
-server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-while not bound:
+def create_socket():
 	try:
+		ip_add = config.get_ip_address()
+		local_port = config.get_local_port()
+		server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+		server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		server_socket.bind((ip_add, local_port))
-		bound = True
+		print(f"{datetime_manager.get_datetime()} - Socket started. Binding to {ip_add}")
+		return server_socket
 	except Exception as e:
-		print(f"{datetime_manager.get_datetime()} - Socket error: {e}")
+		print(f"{datetime_manager.get_datetime()} - Could not create socket: {e}")
+		return None
 
-#Send telemetry to client
-while True:
-	try:
-		#Get client info
-		client_ip = None
-		client_pair = server_socket.recvfrom(buffer_size)
-		client_ip = client_pair[1]
+def raise_system_log(log_id, server_socket):
+	client_pair = server_socket.recvfrom(config.get_buffer_size())
+	server_socket.sendto(str.encode("SYSLOG"), client_pair[1])
+	server_socket.sendto(str.encode(str(log_id)), client_pair[1])
+	server_socket.sendto(str.encode("END"), client_pair[1])
 
-		if client_pair[0]:
-			data = read_data.get_data()
-			#If sensor data received
-			if (type(data) is list):
-				server_socket.sendto(str.encode("START_TM"),client_ip)
-				#send number of values
-				server_socket.sendto(str.encode(str(len(data))),client_ip)
-				#Send telemetry values
-				for d in data:
-					val = str.encode(str(d))
-					server_socket.sendto(val,client_ip)
-				data = [0.0] * TELEMETRY_VALUES
-			#If system log received
-			elif (type(data) is int):
-				server_socket.sendto(str.encode("SYSLOG"),client_ip)
-				server_socket.sendto(str.encode(str(data)),client_ip)
-			else:
-				print(f"{datetime_manager.get_datetime()} - Unexpected message")
-				continue
+def send_data_array(data_array, server_socket):
+	client_pair = server_socket.recvfrom(config.get_buffer_size())
+	server_socket.sendto(str.encode("START_TM"), client_pair[1])
+	#send the number of values
+	server_socket.sendto(str.encode(str(len(data_array))), client_pair[1])
+	#send telemetry values
+	for d in data_array:
+		val = str.encode(str(d))
+		server_socket.sendto(val, client_pair[1])
+	server_socket.sendto(str.encode("END"), client_pair[1])
 
-			#End the message
-			server_socket.sendto(str.encode("END"),client_ip)
-	except socket.error as se:
-		print(f"{datetime_manager.get_datetime()} - Network error: {se}")
-	except Exception as e:
-		print(f"{datetime_manager.get_datetime()} - Internal error: {e}")
+#main if executed as a single script
+if __name__ == '__main__':
+	SERVER_SOCKET = None
+
+	while SERVER_SOCKET is None:
+		SERVER_SOCKET = create_socket()
+
+	while True:
+		sensor_data = read_data.get_data()
+		if isinstance(sensor_data, list):
+			#sensor values
+			send_data_array(sensor_data, SERVER_SOCKET)
+		elif isinstance(sensor_data, int):
+			#syslog
+			raise_system_log(sensor_data, SERVER_SOCKET)
+		else:
+			print(f"{datetime_manager.get_date()} - Unexpected data received from DCM")
+		sensor_data = None
