@@ -1,6 +1,5 @@
 # Code for the video transmission from the rover to the base station
 # Gerardo Aguayo - Rover AGR
-
 import struct
 import cv2
 import socket
@@ -13,6 +12,9 @@ host = config.get_base_station_add()
 port = 5000
 net_socket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
 
+def raise_syslog(log_id):
+	with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+		s.sendto(log_id.encode(), ('127.0.0.1', 5005))
 
 def connectCamera():
 	while True:
@@ -26,6 +28,7 @@ def connectCamera():
 			cap.release()
 		#camera not found
 		print(f"{datetime_manager.get_datetime()} Error - Camera not found")
+		raise_syslog("4")
 
 cap = connectCamera()
 FPS = 30

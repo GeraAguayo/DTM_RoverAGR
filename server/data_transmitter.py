@@ -1,7 +1,28 @@
-import read_data #Returns an array that contains sensor data
+import read_data
 import datetime_manager
 import socket
 import config
+import time
+
+SERVER_SOCKET = None	#For external comms with telemetry center
+RELAY_SOCKET = None	#For internal comms with other modules
+
+def setup_relay():
+	global RELAY_SOCKET
+	try:
+		RELAY_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		RELAY_SOCKET.bind(('127.0.0.1', 5005))
+		RELAY_SOCKET.setblocking(False)
+	except Exception as e:
+		print(f"{datetime_manager.get_datetime()} - Failed to create relay socket: {e}")
+
+def check_local_logs():
+	try:
+		data, addr = RELAY_SOCKET.recvfrom(1024)
+		log_id = data.decode()
+		raise_system_log(log_id)
+	except Exception:
+		pass
 
 def create_socket():
 	try:
@@ -16,38 +37,42 @@ def create_socket():
 		print(f"{datetime_manager.get_datetime()} - Could not create socket: {e}")
 		return None
 
-def raise_system_log(log_id, server_socket):
-	client_pair = server_socket.recvfrom(config.get_buffer_size())
-	server_socket.sendto(str.encode("SYSLOG"), client_pair[1])
-	server_socket.sendto(str.encode(str(log_id)), client_pair[1])
-	server_socket.sendto(str.encode("END"), client_pair[1])
+def raise_system_log(log_id):
+	dest_ip_addr = config.get_base_station_add()
+	SERVER_SOCKET.sendto(str.encode("SYSLOG"), dest_ip_addr)
+	SERVER_SOCKET.sendto(str.encode(str(log_id)), dest_ip_addr)
+	SERVER_SOCKET.sendto(str.encode("END"), dest_ip_addr)
 
-def send_data_array(data_array, server_socket):
-	client_pair = server_socket.recvfrom(config.get_buffer_size())
-	server_socket.sendto(str.encode("START_TM"), client_pair[1])
+def send_data_array(data_array):
+	dest_ip_addr = config.get_base_station_add()
+	SERVER_SOCKET.sendto(str.encode("START_TM"), dest_ip_addr)
 	#send the number of values
-	server_socket.sendto(str.encode(str(len(data_array))), client_pair[1])
+	SERVER_SOCKET.sendto(str.encode(str(len(data_array))), dest_ip_addr)
 	#send telemetry values
 	for d in data_array:
 		val = str.encode(str(d))
-		server_socket.sendto(val, client_pair[1])
-	server_socket.sendto(str.encode("END"), client_pair[1])
+		SERVER_SOCKET.sendto(val, dest_ip_addr)
+	SERVER_SOCKET.sendto(str.encode("END"), dest_ip_addr)
 
 #main if executed as a single script
 if __name__ == '__main__':
-	SERVER_SOCKET = None
+	global SERVER_SOCKET
 
 	while SERVER_SOCKET is None:
 		SERVER_SOCKET = create_socket()
 
+	setup_relay()
+
 	while True:
+		check_local_logs()
 		sensor_data = read_data.get_data()
 		if isinstance(sensor_data, list):
 			#sensor values
-			send_data_array(sensor_data, SERVER_SOCKET)
+			send_data_array(sensor_data)
 		elif isinstance(sensor_data, int):
 			#syslog
-			raise_system_log(sensor_data, SERVER_SOCKET)
+			raise_system_log(sensor_data)
 		else:
 			print(f"{datetime_manager.get_date()} - Unexpected data received from DCM")
 		sensor_data = None
+		time.sleep(0.05)
