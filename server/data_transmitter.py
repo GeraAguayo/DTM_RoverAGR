@@ -38,26 +38,25 @@ def create_socket():
 		return None
 
 def raise_system_log(log_id):
-	dest_ip_addr = config.get_base_station_add()
-	SERVER_SOCKET.sendto(str.encode("SYSLOG"), dest_ip_addr)
-	SERVER_SOCKET.sendto(str.encode(str(log_id)), dest_ip_addr)
-	SERVER_SOCKET.sendto(str.encode("END"), dest_ip_addr)
+	destination = (config.get_base_station_add(), config.get_local_port())
+	SERVER_SOCKET.sendto(str.encode("SYSLOG"), destination)
+	SERVER_SOCKET.sendto(str.encode(str(log_id)), destination)
+	SERVER_SOCKET.sendto(str.encode("END"), destination)
 
 def send_data_array(data_array):
-	dest_ip_addr = config.get_base_station_add()
-	SERVER_SOCKET.sendto(str.encode("START_TM"), dest_ip_addr)
+	destination = (config.get_base_station_add(), config.get_local_port())
+	SERVER_SOCKET.sendto(str.encode("START_TM"), destination)
 	#send the number of values
-	SERVER_SOCKET.sendto(str.encode(str(len(data_array))), dest_ip_addr)
+	SERVER_SOCKET.sendto(str.encode(str(len(data_array))), destination)
 	#send telemetry values
 	for d in data_array:
 		val = str.encode(str(d))
-		SERVER_SOCKET.sendto(val, dest_ip_addr)
-	SERVER_SOCKET.sendto(str.encode("END"), dest_ip_addr)
+		SERVER_SOCKET.sendto(val, destination)
+	SERVER_SOCKET.sendto(str.encode("END"), destination)
 
 #main if executed as a single script
 if __name__ == '__main__':
-	global SERVER_SOCKET
-
+	SERVER_SOCKET = None
 	while SERVER_SOCKET is None:
 		SERVER_SOCKET = create_socket()
 
