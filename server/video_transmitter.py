@@ -28,10 +28,16 @@ def connectCamera():
 		print(f"{datetime_manager.get_datetime()} Error - Camera not found")
 
 cap = connectCamera()
-encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 50]
+FPS = 30
+frame_duration = 1.0 / FPS
+encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 35]
 
 while True:
 	start_time = time.time()
+
+	#empty opencv buffer
+	for _ in range(2):
+		cap.grab()
 
 	ret, frame = cap.read()
 	if not ret:
@@ -42,18 +48,20 @@ while True:
 
 
 	if retval:
-		buffer = buffer.tobytes()
-		buffer_size = len(buffer)
-		num_packs = math.ceil(buffer_size / max_length)
+		data = buffer.tobytes()
+		size = len(data)
 
-		net_socket.sendto(struct.pack("i",num_packs), (host, port))
-
-		for i in range(num_packs):
-			left = i * max_length
-			right = left + max_length
-			data = buffer[left:right]
+		if size < max_length:
 			net_socket.sendto(data, (host,port))
+		else:
+			num_packs = math.ceil(size / max_length)
+			net_socket.sendto(struct.pack("<i",num_packs), (host, port))
+
+			for i in range(num_packs):
+				chunk = data[i * max_length : (i+1) * max_length]
+				net_socket.sendto(chunk, (host,port))
 	#LIMIT FPS
-	time_to_sleep = (1./30.) - (time.time() - start_time)
+	elapsed = time.time() - start_time
+	time_to_sleep = frame_duration - elapsed
 	if time_to_sleep > 0:
 		time.sleep(time_to_sleep)
