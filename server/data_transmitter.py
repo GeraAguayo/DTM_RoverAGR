@@ -78,4 +78,4 @@ if __name__ == '__main__':
 		else:
 			print(f"{datetime_manager.get_datetime()} - Unexpected data received from DCM: {sensor_data}")
 		sensor_data = None
-		time.sleep(0.05)
+		time.sleep(0.5)
